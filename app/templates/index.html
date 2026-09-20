@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <title>Recipe App Homepage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+  </head>
+  <body>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <!-- Tab Nav -->
+      <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'upload_recipe')">Recipe Upload</button>
+        <button class="tablinks active" onclick="openTab(event, 'Plan')">View Recipes</button>
+      </div>
+
+    <!-- ══ VIEW RECIPES TAB ══════════════════════════════ -->
+<div id="Plan" class="tabcontent">
+  <select id="recipe_types">
+        <option value="">Select Recipe Type</option>
+        {% for data in recipe_types %}
+        <option value='{{ data }}'>{{ data }}</option>
+        {% endfor %}
+  </select>
+  <select class="recipe_names" id="recipe_names" aria-label="recipe name">
+      <option value="">Select Recipe</option>
+  </select>
+
+  <div id="recipe_details">
+    
+  </div>
+
+
+</div>
+
+<div id = "upload_recipe" class="tabcontent active">
+    <form id="recipe_upload" method="POST" action="/recipe_upload">
+      <h2>Recipe Upload</h2>
+
+      <div class="row-3col">
+        <div class="field-group">
+          <label for="date">Date</label>
+          <input type="date" id="date" name="date" required>
+        </div>
+
+        <div class="field-group">
+          <label for="recipe_name">Recipe Name</label>
+          <input type="text" id="recipe_name" name="recipe_name" required>
+        </div>
+
+        <div class="field-group">
+          <label for="recipe_type">Recipe Type</label>
+          <select id="recipe_type" name="recipe_type" required>
+            <option value="">Select Recipe Type</option>
+            <option value="breakfast">Breakfast</option>
+            <option value="meat">Meat</option>
+            <option value="pasta">Pasta</option>
+            <option value="soup">Soup/Stew/Chili</option>
+            <option value="crockpot">Crockpot</option>
+            <option value="vegetable">Vegetable</option>
+            <option value="dessert">Dessert/Baking</option>
+            <option value="rice_potato">Rice/Potato</option>
+            <option value="sandwich">sandwich</option>
+            <option value="sauce">Sauce/Dressing</option>
+            <option value="salad">Salad</option>
+            <option value="drink">Drink</option>
+            <option value="misc">Miscellaneous</option>
+          </select>
+        </div>
+      </div>
+
+      <h3>Ingredients</h3>
+      <div id="ingredients-container">
+        <div class="ingredients-row">
+          <input type="text" name="ingredient_name[]" placeholder="Ingredient Name">
+          <input type="text" name="ingredient_amount[]" placeholder="Amount">
+          <select name="ingredient_unit[]">
+            <option value="">Unit</option>
+            <option value="tsp">Teaspoon</option>
+            <option value="tbsp">Tablespoon</option>
+            <option value="cup">Cup</option>
+            <option value="oz">Ounce</option>
+            <option value="lb">Pound</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button type="button" onclick="addIngredientRow()">+ Add Ingredient</button>
+        <button type="button" class="btn-delete" onclick="deleteRow('ingredients-container', '.ingredients-row')">Remove Ingredient Row</button>
+      </div>
+
+      <div id="steps-container">
+        <div class="steps-row">
+          <input type="text" name="step_description[]" placeholder="Step Description">
+        </div>
+      </div>
+      <div class="btn-group">
+        <button type="button" onclick="addStepRow()">+ Add Step</button>
+        <button type="button" class="btn-delete" onclick="deleteRow('steps-container', '.steps-row')">Remove Step</button>
+      </div>
+  
+      <div class="field-group">
+        <label for="notes">Recipe Notes</label>
+        <textarea id="notes" name="notes" rows="5" placeholder="If uploading only a recipe link, put it here."></textarea>
+      </div>
+
+      <button type="submit">Save Recipe</button>
+    </form>
+  </div>
+  </body>
+
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+
+</html>
