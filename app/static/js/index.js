@@ -15,10 +15,12 @@ function addIngredientRow() {
           <input type="number" step="0.01" name="ingredient_amount[]" placeholder="Amount">
           <select name="ingredient_unit[]">
             <option value="">Unit</option>
-            <option value="tsp">Teaspoon</option>
-            <option value="tbsp">Tablespoon</option>
-            <option value="cup">Cup</option>
-            <option value="oz">Ounce</option>
+            <option value="ml">Milliliters</option>
+            <option value=""grams">Grams</option>
+            <option value="tsp">Teaspoons</option>
+            <option value="tbsp">Tablespoons</option>
+            <option value="cup">Cups</option>
+            <option value="oz">Ounces</option>
             <option value="lb">Pound</option>
           </select>
         `
@@ -30,7 +32,7 @@ function addStepRow() {
     const newRow = document.createElement('div');
     newRow.classList.add('steps-row');
     newRow.innerHTML = `
-      <textarea name="step_description[]" placeholder="Step Description"></textarea>
+      <input type="text" name="step_description[]" placeholder="Step Description">
         `
     container.appendChild(newRow);
 }

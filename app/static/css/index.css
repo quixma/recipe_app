@@ -274,7 +274,15 @@ button[type="submit"]:hover {
 #recipe_details:not(:empty) {
   margin-top: 22px;
   padding-top: 4px;
-  /* the ruled lines only appear once there's a recipe on the card */
+}
+
+/* Every line carries its own rule. One repeating gradient stretched over the
+   whole card drifts out of register with the text as you go down it, because
+   the browser rounds the repeat to whole device pixels at fractional zoom. */
+#recipe_details h3,
+#recipe_details h4,
+#recipe_details p,
+#recipe_details li {
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0,
@@ -282,15 +290,15 @@ button[type="submit"]:hover {
     var(--rule) calc(var(--line-height) - 1px),
     var(--rule) var(--line-height)
   );
-  background-position: 0 4px;
 }
 
 #recipe_details h3 {
   font-family: "Caveat", "Segoe Script", cursive;
   font-size: 32px;
   line-height: var(--line-height);
-  margin: 0 0 var(--line-height);
-  padding: 0;
+  margin: 0;
+  /* the blank line under the title is padding, not margin, so it gets ruled */
+  padding: 0 0 var(--line-height);
   border: none;
 }
 
@@ -298,7 +306,8 @@ button[type="submit"]:hover {
   font-size: 13px;
   font-weight: 700;
   color: var(--muted);
-  margin: var(--line-height) 0 0;
+  margin: 0;
+  padding-top: var(--line-height);
   line-height: var(--line-height);
 }
 
@@ -309,11 +318,41 @@ button[type="submit"]:hover {
 #recipe_details ul,
 #recipe_details ol {
   margin: 0;
-  padding-left: 22px;
+  /* no list padding, so each item's rule spans the full width of the card */
+  padding-left: 0;
+  list-style: none;
+}
+
+#recipe_details ol {
+  counter-reset: recipe-step;
 }
 
 #recipe_details li {
+  position: relative;
   line-height: var(--line-height);
+  padding-left: 22px;
+}
+
+/* markers drawn by hand, hanging in the card's left margin like the
+   browser's own would, now that the list itself has no indent */
+#recipe_details li::before {
+  position: absolute;
+  left: -10px;
+  width: 26px;
+  text-align: right;
+  color: var(--muted);
+}
+
+#recipe_details ul > li::before {
+  content: "\2022";
+}
+
+#recipe_details ol > li {
+  counter-increment: recipe-step;
+}
+
+#recipe_details ol > li::before {
+  content: counter(recipe-step) ".";
 }
 
 #recipe_details strong {
