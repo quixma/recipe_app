@@ -6,7 +6,9 @@ from config import Config
 @app.route('/', methods = ["GET", "POST"])
 def index():
     recipe_types = get_recipe_types()
-    return render_template('index.html', recipe_types = recipe_types)
+    grocery_categories = GROCERY_CATEGORY_MAP.values()
+    grocery_list = get_grocery_list()
+    return render_template('index.html', recipe_types = recipe_types, grocery_categories = grocery_categories, grocery_list = grocery_list)
 
 def get_db_connection():
     conn = sqlite3.connect(Config.DB_PATH)
@@ -118,3 +120,55 @@ def get_recipe_details():
 
     conn.close()
     return jsonify(recipe_data)
+
+GROCERY_CATEGORY_MAP = {
+    'Meat': 'Meat',
+    'Vegetables': 'Vegetables',
+    'Fruit': 'Fruit',
+    'Dairy': 'Dairy',
+    'Rice_Potato_Pasta': 'Rice/Potato/Pasta',
+    'Frozen': 'Frozen',
+    'Dessert': 'Dessert',
+    'Snacks': 'Snacks',
+    'Drinks': 'Drinks',
+    'Sauce_Dressing': 'Sauce/Dressing',
+    'Cleaning_products': 'Cleaning Products',
+    'Miscellaneous': 'Miscellaneous'
+}
+
+def get_grocery_list():
+     conn = get_db_connection()
+     cursor = conn.cursor()
+
+     cursor.execute('SELECT grocery_item, grocery_category FROM grocery_list')
+     grocery_list = cursor.fetchall()
+
+     conn.close()
+     return grocery_list
+
+@app.route('/api/addItemtoGroceryList', methods = ["POST"])
+def add_grocery_item():
+    data = request.get_json()
+    item_name = data.get('item_name')
+    item_category = data.get('item_category')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('INSERT INTO grocery_list (grocery_item, grocery_category) VALUES (?, ?)',
+                   (item_name, item_category))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Grocery item added successfully'})
+
+@app.route('/api/clearGroceryList', methods = ["POST"])
+def clear_grocery_list():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('DELETE FROM grocery_list')
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Grocery list cleared successfully'})

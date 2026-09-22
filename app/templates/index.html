@@ -20,6 +20,7 @@
       <div class="tab">
         <button class="tablinks" onclick="openTab(event, 'upload_recipe')">Recipe Upload</button>
         <button class="tablinks active" onclick="openTab(event, 'Plan')">View Recipes</button>
+        <button class="tablinks" onclick="openTab(event, 'grocery_list')">Grocery List</button>
       </div>
 
     <!-- ══ VIEW RECIPES TAB ══════════════════════════════ -->
@@ -121,7 +122,42 @@
       <button type="submit">Save Recipe</button>
     </form>
   </div>
-  </body>
+
+<div id = "grocery_list" class="tabcontent">
+  <h2>Grocery List</h2>
+
+    <label for="grocery_item">Grocery Item</label>
+    <input type="text" id="grocery_item" name="grocery_item" required>
+
+    <select name="grocery_item_category" id="grocery_item_category" required>
+        <option value="">Select Category</option>
+      {% for category in grocery_categories %}
+            <option value="{{ category }}"> {{ category }}</option>
+      {% endfor %}
+    </select>
+
+    <div class="btn-group">
+        <button type="button" onclick="addGroceryItem()">Add Grocery Item</button>
+        <button type="button" onclick="clearGroceryList()">Clear Grocery List</button>
+    </div>
+    
+    
+    <div class="grocery-category">
+    {% for category in grocery_categories %}
+      <h3 id=""> {{ category }}</h3>
+        <ul id="{{ category }}">         
+          {% for item in grocery_list %}
+            {% if category == item["grocery_category"] %}
+              <li class="grocery-row">{{ item["grocery_item"] }}</li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+    {% endfor %}
+    </div>
+
+</div>
+
+</body>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 

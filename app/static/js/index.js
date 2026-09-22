@@ -142,4 +142,56 @@ async function GetRecipeDetailsByName() {
       </ol>
       <p class="notes"><strong>Notes:</strong> <span>${linkify(data.notes)}</span></p>
     `;
-}   
+}
+
+async function addGroceryItem() {
+    const itemName = document.getElementById('grocery_item').value.trim();
+    const itemCategory = document.getElementById('grocery_item_category').value;
+
+    if (!itemName || !itemCategory) return;
+
+    const response = await fetch('/api/addItemtoGroceryList', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_name: itemName, item_category: itemCategory })
+    });
+
+    if (!response.ok) {
+        console.log("Insertion failed" + ":", await response.text());
+        alert("Insertion failed" + ". See console.");
+        return null;
+    }
+    
+    updateGroceryList(itemName, itemCategory);
+    
+}
+
+function updateGroceryList(itemName, itemCategory) {
+    const itemNameInput = document.getElementById('grocery_item');
+    const ul = document.getElementById(itemCategory);
+    const li = document.createElement('li');
+    
+    li.textContent = itemName;
+    ul.appendChild(li);
+    itemNameInput.value = '';
+    // Resets the dropdown to the very first item in the list
+    document.getElementById('grocery_item_category').selectedIndex = 0;
+
+}
+
+async function clearGroceryList() {
+    const response = await fetch('/api/clearGroceryList', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+    });
+
+    if (!response.ok) {
+        console.log("Clearing failed" + ":", await response.text());
+        alert("Clearing failed" + ". See console.");
+        return null;
+    }
+
+    // Clear the grocery list in the UI
+    document.querySelectorAll('.grocery-category ul').forEach(ul => ul.innerHTML = '');
+    document.getElementById('grocery_item_category').selectedIndex = 0;
+}
