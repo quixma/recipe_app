@@ -73,6 +73,7 @@ body {
 
 .tablinks:nth-of-type(1) { background: var(--sage); }
 .tablinks:nth-of-type(2) { background: var(--ochre); }
+.tablinks:nth-of-type(3) { background: var(--rose); }
 
 .tablinks:hover { filter: brightness(1.07); }
 
@@ -182,12 +183,48 @@ textarea:focus {
   border-bottom-color: var(--ink);
 }
 
-/* the two browse dropdowns */
-#recipe_types,
-#recipe_names {
+/* the two search dropdowns, on one line above the recipe */
+.recipe-browse {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recipe-browse select {
   width: auto;
   min-width: 190px;
-  margin: 0 8px 8px 0;
+  flex: 1 1 190px;
+  margin: 0;
+}
+
+/* the serving multiplier sits under the recipe it adjusts, not up with the
+   search */
+.recipe-adjust {
+  display: flex;
+  flex-wrap: wrap;
+  /* stretch, so the button always matches the height of the dropdown */
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 26px;
+}
+
+.recipe-adjust select {
+  width: auto;
+  min-width: 190px;
+  flex: 0 1 220px;
+  margin: 0;
+}
+
+/* nothing to adjust until a recipe is on the card */
+#recipe_details:empty + .recipe-adjust {
+  display: none;
+}
+
+#adjust_recipe {
+  /* rides on the row rather than dropping onto a line of its own */
+  margin-top: 0;
+  flex: 0 0 auto;
+  padding: 0 22px;
 }
 
 /* ── Form rows ─────────────────────────────────────────── */
@@ -401,10 +438,17 @@ button[type="submit"]:hover {
     grid-template-columns: 1fr;
   }
 
-  #recipe_types,
-  #recipe_names {
-    width: 100%;
-    margin-right: 0;
+  .recipe-browse,
+  .recipe-adjust {
+    flex-direction: column;
+  }
+
+  #adjust_recipe {
+    padding: 11px 22px;
+  }
+
+  .grocery-entry {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -432,4 +476,80 @@ button[type="submit"]:hover {
 
 #recipe_details a:hover {
   text-decoration-color: var(--ink);
+}
+
+/* ── Grocery list ─────────────────────────────────── */
+
+.card-hint {
+  margin: -8px 0 20px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.grocery-entry {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  align-items: end;
+}
+
+/* the categories read as columns of a list, not twelve stacked headings */
+.grocery-category {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0 28px;
+  margin-top: 6px;
+}
+
+.grocery-cat h3 {
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+/* an empty category keeps its place, so you can see where an item will
+   land, but it recedes */
+.grocery-cat:has(.grocery-class:empty) {
+  opacity: .4;
+}
+
+.grocery-class {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.grocery-class:empty::after {
+  content: "\2014";
+  color: var(--muted);
+}
+
+.grocery-class li {
+  position: relative;
+  padding-left: 22px;
+  line-height: var(--line-height);
+  cursor: pointer;              /* hand cursor on hover */
+  user-select: none;            /* prevent text selection when clicking rapidly */
+}
+
+/* absolutely positioned, so the line-through below doesn't strike the box */
+.grocery-class li::before {
+  content: "\2610";
+  position: absolute;
+  left: 0;
+  color: var(--muted);
+}
+
+/* `remove` is the class the click handler toggles — it used to say `done`,
+   which nothing ever set, so crossing an item off did nothing */
+.grocery-class li.remove {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.grocery-class li.remove::before {
+  content: "\2612";
+  color: var(--rose);
 }

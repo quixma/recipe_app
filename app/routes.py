@@ -172,3 +172,19 @@ def clear_grocery_list():
     conn.close()
 
     return jsonify({'message': 'Grocery list cleared successfully'})
+
+@app.route('/api/removeGroceryItem', methods = ["POST"])
+def removeGroceryItems():
+    data = request.get_json()
+    item_names = data.get('item_names')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    for item in item_names:
+        cursor.execute("DELETE FROM grocery_list WHERE grocery_item = ?", (item,))
+        conn.commit()
+
+    conn.close()
+
+    return jsonify({'message': 'Items removed successfully'})
+

@@ -18,29 +18,10 @@
     {% endwith %}
     <!-- Tab Nav -->
       <div class="tab">
-        <button class="tablinks" onclick="openTab(event, 'upload_recipe')">Recipe Upload</button>
-        <button class="tablinks active" onclick="openTab(event, 'Plan')">View Recipes</button>
+        <button class="tablinks active" onclick="openTab(event, 'upload_recipe')">Recipe Upload</button>
+        <button class="tablinks" onclick="openTab(event, 'Plan')">View Recipes</button>
         <button class="tablinks" onclick="openTab(event, 'grocery_list')">Grocery List</button>
       </div>
-
-    <!-- ══ VIEW RECIPES TAB ══════════════════════════════ -->
-<div id="Plan" class="tabcontent">
-  <select id="recipe_types">
-        <option value="">Select Recipe Type</option>
-        {% for data in recipe_types %}
-        <option value='{{ data }}'>{{ data }}</option>
-        {% endfor %}
-  </select>
-  <select class="recipe_names" id="recipe_names" aria-label="recipe name">
-      <option value="">Select Recipe</option>
-  </select>
-
-  <div id="recipe_details">
-    
-  </div>
-
-
-</div>
 
 <div id = "upload_recipe" class="tabcontent active">
     <form id="recipe_upload" method="POST" action="/recipe_upload">
@@ -123,42 +104,85 @@
     </form>
   </div>
 
-<div id = "grocery_list" class="tabcontent">
-  <h2>Grocery List</h2>
-
-    <label for="grocery_item">Grocery Item</label>
-    <input type="text" id="grocery_item" name="grocery_item" required>
-
-    <select name="grocery_item_category" id="grocery_item_category" required>
-        <option value="">Select Category</option>
-      {% for category in grocery_categories %}
-            <option value="{{ category }}"> {{ category }}</option>
-      {% endfor %}
+  <!-- ══ VIEW RECIPES TAB ══════════════════════════════ -->
+<div id="Plan" class="tabcontent">
+  <div class="recipe-browse">
+    <select id="recipe_types" aria-label="recipe type" autocomplete="off">
+        <option value="">Select Recipe Type</option>
+        {% for data in recipe_types %}
+        <option value='{{ data }}'>{{ data }}</option>
+        {% endfor %}
     </select>
 
-    <div class="btn-group">
-        <button type="button" onclick="addGroceryItem()">Add Grocery Item</button>
-        <button type="button" onclick="clearGroceryList()">Clear Grocery List</button>
-    </div>
-    
-    
-    <div class="grocery-category">
-    {% for category in grocery_categories %}
-      <h3 id=""> {{ category }}</h3>
-        <ul id="{{ category }}">         
-          {% for item in grocery_list %}
-            {% if category == item["grocery_category"] %}
-              <li class="grocery-row">{{ item["grocery_item"] }}</li>
-            {% endif %}
-          {% endfor %}
-        </ul>
-    {% endfor %}
+    <select class="recipe_names" id="recipe_names" aria-label="recipe name" autocomplete="off">
+        <option value="">Select Recipe</option>
+    </select>
+
+  </div>
+
+  {#- truly empty, so :empty matches until a recipe is loaded into it -#}
+  <div id="recipe_details"></div>
+
+  <div class="recipe-adjust">
+    <select class="recipe_multiply" id="recipe_multiply" aria-label="recipe multiply" autocomplete="off">
+        <option value="">Adjust Recipe Servings</option>
+        <option value=".5">.5x</option>
+        <option value=".75">.75x</option>
+        <option value="1.5">1.5x</option>
+        <option value="2">2x</option>
+        <option value="3">3x</option>
+        <option value="5">5x</option>
+    </select>
+
+    <button type="submit" id="adjust_recipe">Adjust Recipe</button>
+  </div>
+</div>
+
+<!-- ══ GROCERY LIST TAB ═════════════════════ -->
+<div id="grocery_list" class="tabcontent">
+  <h2>Grocery List</h2>
+
+  <div class="grocery-entry">
+    <div class="field-group">
+      <label for="grocery_item">Item</label>
+      <input type="text" id="grocery_item" name="grocery_item" placeholder="e.g. Yellow onions">
     </div>
 
+    <div class="field-group">
+      <label for="grocery_item_category">Category</label>
+      <select name="grocery_item_category" id="grocery_item_category">
+        <option value="">Select Category</option>
+        {% for category in grocery_categories %}
+        <option value="{{ category }}">{{ category }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button type="button" onclick="addGroceryItem()">+ Add Item</button>
+    <button type="button" onclick="removeGroceryItem()">Remove Crossed-Off</button>
+    <button type="button" class="btn-delete" onclick="clearGroceryList()">Clear Whole List</button>
+  </div>
+
+  <div class="grocery-category">
+    {% for category in grocery_categories %}
+    <section class="grocery-cat">
+      <h3>{{ category }}</h3>
+      {#- no whitespace inside the <ul>, so an empty one really is :empty -#}
+      <ul class="grocery-class" id="{{ category }}">
+        {%- for item in grocery_list -%}
+          {%- if category == item["grocery_category"] -%}
+            <li class="grocery-row" id="{{ item['grocery_item'] }}">{{ item["grocery_item"] }}</li>
+          {%- endif -%}
+        {%- endfor -%}
+      </ul>
+    </section>
+    {% endfor %}
+  </div>
 </div>
 
 </body>
+</html>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
-
-</html>
