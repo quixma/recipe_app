@@ -236,14 +236,17 @@ textarea:focus {
 }
 
 .ingredients-row,
-.steps-row {
+.steps-row,
+.modal-ingredients-row,
+.modal-steps-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 10px;
   margin-bottom: 8px;
 }
 
-.steps-row {
+.steps-row,
+.modal-steps-row {
   grid-template-columns: 1fr;
 }
 
@@ -284,7 +287,8 @@ button {
   color: #fff;
 }
 
-button[type="submit"] {
+button[type="submit"],
+.btn-primary {
   margin-top: 26px;
   background: var(--ink);
   color: var(--card);
@@ -293,7 +297,8 @@ button[type="submit"] {
   padding: 11px 28px;
 }
 
-button[type="submit"]:hover {
+button[type="submit"]:hover,
+.btn-primary:hover {
   background: #162c48;
 }
 
@@ -412,52 +417,7 @@ button[type="submit"]:hover {
 
 /* ── Small screens ─────────────────────────────────────── */
 
-@media (max-width: 620px) {
-  body {
-    padding: 22px 12px 48px;
-  }
 
-  .tabcontent {
-    padding: 24px 18px 30px 40px;
-  }
-
-  .tabcontent::before {
-    left: 26px;
-  }
-
-  .tab {
-    padding-left: 10px;
-  }
-
-  .tablinks {
-    padding: 8px 14px 11px;
-  }
-
-  .row-3col,
-  .ingredients-row {
-    grid-template-columns: 1fr;
-  }
-
-  .recipe-browse,
-  .recipe-adjust {
-    flex-direction: column;
-  }
-
-  #adjust_recipe {
-    padding: 11px 22px;
-  }
-
-  .grocery-entry {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
-  }
-}
 
 /* ── Links typed into the notes ────────────────────────── */
 
@@ -488,7 +448,8 @@ button[type="submit"]:hover {
 
 .grocery-entry {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  /* sized to the length of an item name rather than the width of the card */
+  grid-template-columns: minmax(0, 300px) minmax(0, 190px);
   gap: 16px;
   align-items: end;
 }
@@ -552,4 +513,196 @@ button[type="submit"]:hover {
 .grocery-class li.remove::before {
   content: "\2612";
   color: var(--rose);
+}
+
+/* ── Edit modal: a card lifted out of the box ──────── */
+
+/* the trigger rides the search row, matching #adjust_recipe */
+#editRecipe {
+  flex: 0 0 auto;
+  background: var(--ink);
+  color: var(--card);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0 22px;
+}
+
+#editRecipe:hover {
+  background: #162c48;
+}
+
+/* closed until the button opens it — nothing shows on load */
+.modal {
+  display: none;
+}
+
+.modal.active {
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  /* the walnut board, dimmed, so the lifted card is the only lit thing */
+  background: rgba(28, 18, 12, .62);
+  padding: 28px 20px;
+}
+
+.modal-inner {
+  position: relative;
+  /* auto margins centre the card without ever clipping one taller than the
+     viewport, the way align-items: center would */
+  margin: auto;
+  width: 100%;
+  max-width: 660px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: var(--radius);
+  /* the same stacked card edge as .tabcontent, thrown higher off the board */
+  box-shadow:
+    0 1px 0 var(--card-edge),
+    0 2px 0 rgba(255, 255, 255, .5),
+    0 3px 0 var(--card-edge),
+    0 24px 48px -10px rgba(0, 0, 0, .6);
+  animation: card-lift .18s ease-out;
+}
+
+/* the card's red margin rule, as on every other card */
+.modal-inner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 46px;
+  width: 1px;
+  background: var(--margin-line);
+  opacity: .5;
+  pointer-events: none;
+}
+
+@keyframes card-lift {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* stays put while the form scrolls under it */
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 0 0 auto;
+  padding: 26px 30px 12px 62px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-close {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--card-edge);
+  border-radius: var(--radius);
+}
+
+.modal-close:hover {
+  color: #fff;
+  background: var(--rose);
+  border-color: var(--rose);
+}
+
+.modal-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 22px 30px 34px 62px;
+}
+
+/* stacked fields need the breathing room the card's grid rows get for free.
+   Direct children only, or the three-across row's own fields get pushed
+   out of line with each other. */
+.modal-content > .field-group + .field-group {
+  margin-top: 16px;
+}
+
+.modal-content > .field-group:last-of-type {
+  margin-top: 22px;
+}
+
+/* ── Small screens ───────────────────────────── */
+/* Last in the file on purpose: these override the rules above at the same
+   specificity, so anything defined after them would quietly win instead. */
+
+@media (max-width: 620px) {
+  body {
+    padding: 22px 12px 48px;
+  }
+
+  .tabcontent {
+    padding: 24px 18px 30px 40px;
+  }
+
+  .tabcontent::before {
+    left: 26px;
+  }
+
+  .tab {
+    padding-left: 10px;
+  }
+
+  .tablinks {
+    padding: 8px 14px 11px;
+  }
+
+  .row-3col,
+  .ingredients-row,
+  .modal-ingredients-row {
+    grid-template-columns: 1fr;
+  }
+
+  .recipe-browse,
+  .recipe-adjust {
+    flex-direction: column;
+  }
+
+  #adjust_recipe {
+    padding: 11px 22px;
+  }
+
+  .grocery-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .modal.active {
+    padding: 14px 10px;
+  }
+
+  .modal-header {
+    padding: 20px 18px 10px 40px;
+  }
+
+  .modal-content {
+    padding: 16px 18px 26px 40px;
+  }
+
+  .modal-inner::before {
+    left: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

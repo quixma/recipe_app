@@ -2,6 +2,7 @@
 <html lang="">
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Recipe App Homepage</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,7 +72,7 @@
           <select name="ingredient_unit[]">
             <option value="">Unit</option>
             <option value="ml">Milliliter</option>
-            <option value=""grams">Gram</option>
+            <option value="grams">Gram</option>
             <option value="tsp">Teaspoon</option>
             <option value="tbsp">Tablespoon</option>
             <option value="cup">Cup</option>
@@ -118,6 +119,7 @@
         <option value="">Select Recipe</option>
     </select>
 
+    <button id="editRecipe">Edit Recipe</button>
   </div>
 
   {#- truly empty, so :empty matches until a recipe is loaded into it -#}
@@ -182,7 +184,103 @@
   </div>
 </div>
 
-</body>
-</html>
+<!-- ── Edit Recipe Modal ─────────────── -->
+<div id="editRecipe-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editRecipe-title">
+  <div class="modal-inner">
+    <div class="modal-header">
+      <h2 id="editRecipe-title">Edit Recipe</h2>
+      <button type="button" class="modal-close" data-modal="editRecipe-modal" aria-label="Close">&#x2715;</button>
+    </div>
+
+    <div class="modal-content">
+      {#- the recipe being edited, so an update knows which row to write to -#}
+      <input type="hidden" id="modal-recipe-id" name="recipe_id" value="">
+
+      {#- same three-across row as the upload card -#}
+      <div class="row-3col">
+        <div class="field-group">
+          <label for="modal-recipe-date">Date</label>
+          <input type="date" id="modal-recipe-date" name="date">
+        </div>
+
+        <div class="field-group">
+          <label for="modal-recipe-name">Recipe Name</label>
+          <input type="text" id="modal-recipe-name" name="recipe_name">
+        </div>
+
+        <div class="field-group">
+          <label for="modal-recipe-type">Recipe Type</label>
+          <select id="modal-recipe-type" name="recipe_type" required>
+            <option value="">Select Recipe Type</option>
+            <option value="Breakfast">Breakfast</option>
+            <option value="Chicken">Chicken</option>
+            <option value="Beef">Beef</option>
+            <option value="Pork">Pork</option>
+            <option value="Seafood">Seafood</option>
+            <option value="Pasta">Pasta</option>
+            <option value="Soup">Soup/Stew/Chili</option>
+            <option value="Crockpot">Crockpot</option>
+            <option value="Vegetable">Vegetable</option>
+            <option value="Dessert">Dessert/Baking</option>
+            <option value="Rice_Potato">Rice/Potato</option>
+            <option value="Sandwich">Sandwich</option>
+            <option value="Sauce">Sauce/Dressing</option>
+            <option value="Salad">Salad</option>
+            <option value="Drink">Drink</option>
+            <option value="Marinade">Marinade</option>
+            <option value="Misc">Miscellaneous</option>
+          </select>
+        </div>
+      </div>
+
+      <h3>Ingredients</h3>
+      <div id="modal-ingredients-container"></div>
+      <div class="btn-group">
+        <button type="button" onclick="addModalRow('modal-ingredients-container', 'ingredient-row-template')">+ Add Ingredient</button>
+        <button type="button" class="btn-delete" onclick="deleteRow('modal-ingredients-container', '.modal-ingredients-row')">Remove Ingredient Row</button>
+      </div>
+
+      <h3>Steps</h3>
+      <div id="modal-steps-container"></div>
+      <div class="btn-group">
+        <button type="button" onclick="addModalRow('modal-steps-container', 'step-row-template')">+ Add Step</button>
+        <button type="button" class="btn-delete" onclick="deleteRow('modal-steps-container', '.modal-steps-row')">Remove Step</button>
+      </div>
+
+      <div class="field-group">
+        <label for="modal-notes">Recipe Notes</label>
+        <textarea id="modal-notes" name="notes" rows="5" placeholder="If uploading only a recipe link, put it here."></textarea>
+      </div>
+
+      <button type="button" id="updateRecipe" class="btn-primary">Save changes</button>
+    </div>
+  </div>
+</div>
+
+{#- the row templates wrap their fields, so cloning one clones a whole row -#}
+<template id="ingredient-row-template">
+  <div class="modal-ingredients-row">
+    <input type="text" name="ingredient_name[]" placeholder="Ingredient Name">
+    <input type="text" name="ingredient_amount[]" placeholder="Amount">
+    <select name="ingredient_unit[]">
+      <option value="">Unit</option>
+      <option value="ml">Milliliter</option>
+      <option value="grams">Gram</option>
+      <option value="tsp">Teaspoon</option>
+      <option value="tbsp">Tablespoon</option>
+      <option value="cup">Cup</option>
+      <option value="oz">Ounce</option>
+      <option value="lb">Pound</option>
+    </select>
+  </div>
+</template>
+
+<template id="step-row-template">
+  <div class="modal-steps-row">
+    <input type="text" name="step_description[]" placeholder="Step Description">
+  </div>
+</template>
 
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

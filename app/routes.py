@@ -80,8 +80,8 @@ def get_recipe_names_by_type():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT DISTINCT recipe_name FROM recipes WHERE recipe_type = ?', (type,))
-    recipe_names = [row['recipe_name'] for row in cursor.fetchall()]
+    cursor.execute('SELECT Id, recipe_name FROM recipes WHERE recipe_type = ? ORDER BY recipe_name', (type,))
+    recipe_names = [{'id': row['Id'], 'recipe_name': row['recipe_name']} for row in cursor.fetchall()]
     conn.close()
 
     return jsonify(recipe_names)
@@ -108,6 +108,7 @@ def get_recipe_details():
         steps = cursor.fetchall()
 
         recipe_data = {
+            'id': session_id,
             'date': recipe_details['date'],
             'recipe_name': recipe_details['recipe_name'],
             'recipe_type': recipe_details['recipe_type'],
@@ -132,9 +133,84 @@ GROCERY_CATEGORY_MAP = {
     'Snacks': 'Snacks',
     'Drinks': 'Drinks',
     'Sauce_Dressing': 'Sauce/Dressing',
+    'Baking': 'Baking',
     'Cleaning_products': 'Cleaning Products',
     'Miscellaneous': 'Miscellaneous'
 }
+
+@app.route('/api/updateRecipe', methods = ["POST"])
+def updateRecipe():
+    data = request.get_json()
+    recipe = {
+        'id': data.get("id"),
+        'date': data.get("date"),
+        'recipe_name': data.get("recipe_name"),
+        'recipe_type': data.get("recipe_type"),
+        'notes': data.get("notes"),
+        'ingredients': data.get("ingredients") or [],
+        'steps': data.get("steps") or [],
+    }
+
+    try:
+        session_id = int(recipe['id'])          # arrives as text from the hidden field
+    except (TypeError, ValueError):
+        return jsonify({'error': 'No recipe id was sent, so there is nothing to update.'}), 400
+
+    # Browsing starts by picking a type, so a recipe saved without one could
+    # never be found again.
+    if not (recipe['recipe_type'] or '').strip():
+        return jsonify({'error': 'A recipe type is required.'}), 400
+
+    if not (recipe['recipe_name'] or '').strip():
+        return jsonify({'error': 'A recipe name is required.'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('UPDATE recipes SET date = ?, recipe_name = ?, recipe_type = ?, notes = ? WHERE Id = ?',
+                       (recipe['date'], recipe['recipe_name'], recipe['recipe_type'], recipe['notes'], session_id))
+
+        if cursor.rowcount == 0:                # no such recipe, so there is nothing to write
+            conn.rollback()
+            return jsonify({'error': 'No recipe found with that id.'}), 404
+
+        # Ingredient and step rows carry no id of their own, so they are replaced
+        # wholesale rather than matched up one by one. That is also what lets a
+        # row be added or removed in the modal.
+        cursor.execute('DELETE FROM ingredients WHERE session_id = ?', (session_id,))
+        cursor.execute('DELETE FROM steps WHERE session_id = ?', (session_id,))
+
+        for row in recipe['ingredients']:
+            ingredient_entry = {
+                'ingredient_name': row.get('ingredient_name'),
+                'ingredient_amount': row.get('ingredient_amount'),
+                'ingredient_unit': row.get('ingredient_unit'),
+            }
+            ingredient_entry = {key: None if value == "" else value for key, value in ingredient_entry.items()} # if empty value replace with null
+
+            if not any(ingredient_entry.values()):   # a row left blank is not an ingredient
+                continue
+
+            cursor.execute('INSERT INTO ingredients (session_id, ingredient_name, ingredient_amount, ingredient_unit) VALUES (?, ?, ?, ?)',
+                           (session_id, ingredient_entry['ingredient_name'], ingredient_entry['ingredient_amount'], ingredient_entry['ingredient_unit']))
+
+        for row in recipe['steps']:
+            step_description = row.get('step_description')
+            if not step_description:             # same for a step with nothing typed into it
+                continue
+
+            cursor.execute('INSERT INTO steps (session_id, step_description) VALUES (?, ?)',
+                           (session_id, step_description))
+
+        conn.commit()                            # commit first, then close
+    except Exception:
+        conn.rollback()                          # a half-written recipe is worse than an unchanged one
+        raise
+    finally:
+        conn.close()
+
+    return jsonify({'message': 'Recipe updated', 'id': session_id})
 
 def get_grocery_list():
      conn = get_db_connection()

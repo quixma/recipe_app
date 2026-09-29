@@ -16,7 +16,7 @@ function addIngredientRow() {
           <select name="ingredient_unit[]">
             <option value="">Unit</option>
             <option value="ml">Milliliters</option>
-            <option value=""grams">Grams</option>
+            <option value="grams">Grams</option>
             <option value="tsp">Teaspoons</option>
             <option value="tbsp">Tablespoons</option>
             <option value="cup">Cups</option>
@@ -43,6 +43,8 @@ function deleteRow(containerId, rowId) {
     const rowAmount = divElements.length;
     const indextoDelete = rowAmount - 1;
 
+    if (indextoDelete < 0) return; //nothing left to remove, so there is nothing to do
+
     divElements[indextoDelete].remove();
 }
 
@@ -58,8 +60,6 @@ adjust_recipe_btn.addEventListener("click", () => UpdateRecipeIngredientValues(a
 
 //restoring select drop downs on page reload
 window.addEventListener("pageshow", (event) => {
-    // a back/forward-cache restore brings the whole DOM back intact, names and
-    // recipe included, so there is nothing inconsistent to clear up there
     if (event.persisted) return;
 
     recipeTypeSelect.selectedIndex = 0;
@@ -93,8 +93,9 @@ async function GetRecipeNamesByType() {
 
     data.forEach(function (item) {
         const option = document.createElement("option");
-        option.value = item;
-        option.textContent = item;
+        option.value = item.recipe_name;
+        option.textContent = item.recipe_name;
+        option.dataset.recipeId = item.id;   // the row this option stands for
         nameSelect.appendChild(option);
     });
 }
@@ -203,6 +204,174 @@ function formatAmount(n) {
     return String(Math.round(n * 100) / 100);
 }
 
+//Edit recipe modal
+var editRecipe_btn = document.getElementById('editRecipe');
+var updateRecipe_btn = document.getElementById('updateRecipe');
+
+// which template field each key of an API row belongs in
+const INGREDIENT_FIELDS = {
+    'input[name="ingredient_name[]"]': 'ingredient_name',
+    'input[name="ingredient_amount[]"]': 'ingredient_amount',
+    'select[name="ingredient_unit[]"]': 'ingredient_unit'
+};
+const STEP_FIELDS = {
+    'input[name="step_description[]"]': 'step_description'
+};
+
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    // the board behind the card shouldn't scroll while the card is up
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Close buttons
+document.querySelectorAll('.modal-close').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.modal));
+});
+
+// Click the dimmed board to close
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', e => {
+        if (e.target === modal) closeModal(modal.id);
+    });
+});
+//escape button closes
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    const open = document.querySelector('.modal.active');
+    if (open) closeModal(open.id);
+});
+
+editRecipe_btn.addEventListener('click', async () => {
+    const name = nameTypeSelect.value;
+    const type = recipeTypeSelect.value;
+
+    if (!name || !type) return;
+
+    const response = await fetch('/api/getRecipeDetailsByName', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipe_name: name, recipe_type: type })
+    });
+
+    if (!response.ok) {
+        console.log("Lookup failed" + ":", await response.text());
+        alert("Lookup failed" + ". See console.");
+        return null;
+    }
+
+    const data = await response.json();
+
+    if (nameTypeSelect.value !== name) return;
+
+    document.getElementById("modal-recipe-id").value = data.id ?? "";
+    document.getElementById("modal-recipe-date").value = new Date().toISOString().split('T')[0];
+    document.getElementById("modal-recipe-name").value = data.recipe_name;
+    document.getElementById("modal-recipe-type").value = data.recipe_type;
+    document.getElementById("modal-notes").value = data.notes || "";
+    fillModalRows('modal-ingredients-container', 'ingredient-row-template', data.ingredients, INGREDIENT_FIELDS);
+    fillModalRows('modal-steps-container', 'step-row-template', data.steps, STEP_FIELDS);
+
+    openModal('editRecipe-modal');
+});
+
+updateRecipe_btn.addEventListener('click', async () => {
+    const updatedRecipe = {
+        id: document.getElementById("modal-recipe-id").value,
+        date: document.getElementById("modal-recipe-date").value,
+        recipe_name: document.getElementById("modal-recipe-name").value,
+        recipe_type: document.getElementById("modal-recipe-type").value,
+        notes: document.getElementById("modal-notes").value,
+        ingredients: readModalRows('modal-ingredients-container', INGREDIENT_FIELDS),
+        steps: readModalRows('modal-steps-container', STEP_FIELDS)
+    }
+
+    // the type is how a recipe is found again, and the placeholder option is
+    // empty, so neither may be left blank
+    if (!updatedRecipe.recipe_name.trim() || !updatedRecipe.recipe_type) {
+        alert("A recipe needs a name and a type before it can be saved.");
+        return;
+    }
+
+    const response = await fetch('/api/updateRecipe', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedRecipe)
+    });
+
+    if (!response.ok) {
+        console.log("Update failed" + ":", await response.text());
+        alert("Update failed" + ". See console.");
+        return null;
+    }
+
+    closeModal('editRecipe-modal');
+
+    // the name or the type may have just changed, so rebuild the browse
+    // dropdowns around the recipe rather than re-reading the old selection
+    const newType = updatedRecipe.recipe_type;
+    const newName = updatedRecipe.recipe_name;
+
+    // the type list is built when the page loads, so a type that had no
+    // recipes until now is not in it yet
+    if (newType && ![...recipeTypeSelect.options].some(option => option.value === newType)) {
+        recipeTypeSelect.add(new Option(newType, newType));
+    }
+
+    recipeTypeSelect.value = newType;
+    await GetRecipeNamesByType();
+    nameTypeSelect.value = newName;
+
+    GetRecipeDetailsByName();
+});
+
+//reads the rows back in display order, which is the order they get stored in
+function readModalRows(containerId, fieldMap) {
+    return Array.from(document.getElementById(containerId).children).map(row => {
+        const values = {};
+        Object.entries(fieldMap).forEach(([selector, key]) => {
+            const field = row.querySelector(selector);
+            values[key] = field ? field.value : "";
+        });
+        return values;
+    });
+}
+
+function addModalRow(containerId, templateId, values) {
+    const container = document.getElementById(containerId);
+    const row = document.getElementById(templateId).content.firstElementChild.cloneNode(true);
+
+    if (values) {
+        Object.entries(values).forEach(([selector, value]) => {
+            const field = row.querySelector(selector);
+            if (field) {
+                field.value = value || "";
+            }
+        });
+    }
+    container.appendChild(row);
+    return row;
+}
+
+function fillModalRows(containerId, templateId, items, fieldMap) {
+    document.getElementById(containerId).innerHTML = "";
+
+    if (!items || !items.length) { //a record with no rows still opens with one blank row to type into
+        addModalRow(containerId, templateId);
+        return;
+    }
+
+    items.forEach(item => {
+        const values = {};
+        Object.entries(fieldMap).forEach(([selector, key]) => { values[selector] = item[key]; });
+        addModalRow(containerId, templateId, values);
+    });
+}
 
 //------GROCERY LIST-------------
 async function addGroceryItem() {
