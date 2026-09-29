@@ -20,6 +20,9 @@
 
   --line-height: 28px;   /* card text sits on the ruled lines */
   --radius: 3px;
+  /* a dropdown's full height (line-height + 7px padding + 1px border, doubled),
+     so buttons on the same row can match it without relying on stretch */
+  --control-h: 44px;
 }
 
 /* ── The box ───────────────────────────────────────────── */
@@ -220,11 +223,16 @@ textarea:focus {
   display: none;
 }
 
-#adjust_recipe {
+/* the two row buttons are sized together, so Edit Recipe and Adjust Recipe
+   always read as the same control */
+#adjust_recipe,
+#editRecipe {
   /* rides on the row rather than dropping onto a line of its own */
   margin-top: 0;
   flex: 0 0 auto;
   padding: 0 22px;
+  /* matches the dropdown even when the row wraps and stretch stops helping */
+  min-height: var(--control-h);
 }
 
 /* ── Form rows ─────────────────────────────────────────── */
@@ -517,14 +525,13 @@ button[type="submit"]:hover,
 
 /* ── Edit modal: a card lifted out of the box ──────── */
 
-/* the trigger rides the search row, matching #adjust_recipe */
+/* the trigger rides the search row; its size comes from the shared
+   #adjust_recipe rule above */
 #editRecipe {
-  flex: 0 0 auto;
   background: var(--ink);
   color: var(--card);
   border: none;
   border-radius: var(--radius);
-  padding: 0 22px;
 }
 
 #editRecipe:hover {
@@ -673,9 +680,23 @@ button[type="submit"]:hover,
   .recipe-browse,
   .recipe-adjust {
     flex-direction: column;
+    /* the row is now a column, so stretch would size width, not height */
+    align-items: stretch;
   }
 
-  #adjust_recipe {
+  /* stacked, flex-basis would be read as a HEIGHT — hand the sizing back to
+     the content and let each control run the full width of the card */
+  .recipe-browse select,
+  .recipe-adjust select,
+  #adjust_recipe,
+  #editRecipe {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  #adjust_recipe,
+  #editRecipe {
     padding: 11px 22px;
   }
 
